@@ -1,8 +1,0 @@
-Accept: */*
-Content-Length: 18
-User-Agent: insomnia/2020.4.1
-Toto: titi
-Content-Type: application/json
-
-
-{ "toto": "titi" }
