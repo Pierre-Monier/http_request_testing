@@ -55,7 +55,7 @@ func convertReq(r *http.Request) []byte {
 		log.Println(err)
 	}
 	// maybe add a \n between header and request ?
-	res := append(h, []byte("\n\n")...)
+	res := append(h, []byte("\n")...)
 	return append(res, b...)
 }
 
