@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -12,15 +14,14 @@ func main() {
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
 	}
-
 	fmt.Println("Server listening")
 }
 
 func handleFunc(w http.ResponseWriter, r *http.Request) {
+	file := "./response/res.txt"
 	switch method := r.Method; method {
 	case "GET":
-		fmt.Println("return file")
-		data, err := ioutil.ReadFile("test.txt")
+		data, err := ioutil.ReadFile(file)
 		if err != nil {
 			w.WriteHeader(404)
 			return
@@ -29,52 +30,47 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(data))
 		return
 	case "POST":
-		fmt.Println("Ecrire fichier")
-		ioutil.WriteFile("response/current", convertReq(r))
+		err := ioutil.WriteFile(file, convertReq(r), 0777)
+		if err != nil {
+			w.WriteHeader(500)
+		}
+		return
 	case "DELETE":
+		err := os.Remove(file)
+		if err != nil {
+			w.WriteHeader(404)
+			return
+		}
+		w.WriteHeader(200)
+		return
 	default:
+		w.WriteHeader(404)
 	}
-
-	fmt.Println("no file, return 403, method not authorized")
 }
 
-func convertReq(r *http.Request) string {
+func convertReq(r *http.Request) []byte {
+	h := convertHeader(r.Header)
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
-	return b
-	fmt.Println(data)
+	// maybe add a \n between header and request ?
+	return append(h, b...)
 }
 
-// func returnFile(w http.ResponseWriter, r *http.Request) {
-// 	fmt.Println(r.Method)
-// 	if r.Method == "GET" {
+func convertHeader(h http.Header) []byte {
+	res := []byte{}
+	for k, v := range h {
+		res = append(res, []byte(k)...)
+		res = append(res, []byte(arrToString(v))...)
+	}
+	return res
+}
 
-// 		if err != nil {
-// 			fmt.Println("no file, return 404")
-// 		}
-// 		fmt.Println(file)
-// 		fmt.Println("return file")
-// 	}
-// 	fmt.Println("no file, return 403, method not authorized")
-// }
-
-// func postFile(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method == "POST" {
-// 		fmt.Println(r.Body)
-// 	}
-// 	fmt.Println("no file, return 403, method not authorized")
-// }
-
-// func delFile(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method == "DEL" {
-// 		file, err := os.Open("./response/current")
-// 		if err != nil {
-// 			fmt.Println("no file, return 404")
-// 		}
-// 		fmt.Println(file)
-// 		fmt.Println("delete file")
-// 	}
-// 	fmt.Println("no file, return 403, method not authorized")
-// }
+func arrToString(a []string) string {
+	res := ""
+	for _, v := range a {
+		res += v
+	}
+	return res
+}
